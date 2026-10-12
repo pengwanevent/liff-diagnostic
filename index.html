@@ -3,320 +3,240 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1">
   <title>LIFF 初始化診斷</title>
+
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+
   <style>
     body {
-      font-family: sans-serif;
-      max-width: 640px;
-      margin: 30px auto;
+      font-family: Arial, "Noto Sans TC", sans-serif;
+      background: #f4f6f8;
+      color: #263238;
+      margin: 0;
+      padding: 20px 14px;
+    }
+
+    main {
+      max-width: 520px;
+      margin: auto;
+    }
+
+    section {
+      background: white;
       padding: 20px;
-      line-height: 1.8;
-      overflow-wrap: anywhere;
+      margin-bottom: 16px;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px #0000000d;
     }
-    #status {
-      padding: 14px;
-      background: #f2f2f2;
-      border-radius: 8px;
-      white-space: pre-wrap;
-    }
+
+    h2, h3 { margin-top: 0; }
+
     button {
-      padding: 10px 16px;
+      width: 100%;
+      padding: 13px;
       margin-top: 12px;
+      border: 0;
+      border-radius: 8px;
+      background: #176b55;
+      color: white;
+      font-size: 16px;
       cursor: pointer;
+    }
+
+    button:disabled {
+      opacity: .55;
+      cursor: not-allowed;
+    }
+
+    .message {
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      background: #f0f3f5;
+      padding: 12px;
+      border-radius: 8px;
+      line-height: 1.7;
     }
   </style>
 </head>
+
 <body>
-  <h2>LIFF 初始化診斷</h2>
-  <p>這是暫時測試頁，不會連接正式報到資料。</p>
-  <div id="status">準備中……</div>
-  <button id="loginButton" hidden>使用 LINE 登入</button>
+<main>
+  <section>
+    <h2>LIFF 初始化診斷</h2>
+    <p>這是暫時測試頁，不會連接正式報到資料。</p>
+    <div id="liffResult" class="message">正在初始化 LIFF……</div>
+  </section>
 
-  <script>
-    const LIFF_ID = "2011929218-7iUfDvyE";
+  <section>
+    <h3>測試版後端連線（POST）</h3>
+    <button id="testBackendButton" onclick="testBackend()">
+      測試 POST 連線
+    </button>
+    <div id="backendResult" class="message">尚未測試</div>
+  </section>
 
-    const statusBox = document.getElementById("status");
-    const loginButton = document.getElementById("loginButton");
+  <iframe
+    name="backendPostFrame"
+    id="backendPostFrame"
+    style="display:none">
+  </iframe>
 
-    function showStatus(message) {
-      statusBox.textContent = message;
-    }
+  <form
+    id="backendPostForm"
+    method="POST"
+    target="backendPostFrame"
+    style="display:none">
 
-    async function startDiagnostic() {
-      showStatus(
-        "診斷 1：開始檢查 SDK" +
-        "\n網域：" + location.hostname +
-        "\n是否在 iframe：" + (window.self !== window.top ? "是" : "否")
-      );
-
-      if (typeof liff === "undefined") {
-        showStatus("錯誤：LIFF SDK 未載入。");
-        return;
-      }
-
-      if (!LIFF_ID || LIFF_ID.startsWith("請稍後")) {
-        showStatus(
-          "診斷 2：LIFF SDK 已載入。" +
-          "\n請先取得測試用 LIFF ID，再填入程式碼。"
-        );
-        return;
-      }
-
-      try {
-        showStatus("診斷 2：SDK 已載入，開始初始化 LIFF……");
-
-        await liff.init({ liffId: LIFF_ID });
-
-        showStatus(
-          "診斷 3：LIFF 初始化完成！" +
-          "\n是否在 LINE 內：" + (liff.isInClient() ? "是" : "否") +
-          "\n是否已登入：" + (liff.isLoggedIn() ? "是" : "否") +
-          "\n網域：" + location.hostname
-        );
-
-        if (!liff.isLoggedIn()) {
-          loginButton.hidden = false;
-        }
-      } catch (error) {
-        showStatus(
-          "LIFF 初始化失敗：" +
-          (error && error.message ? error.message : String(error)) +
-          "\n網域：" + location.hostname
-        );
-      }
-    }
-
-    loginButton.addEventListener("click", () => {
-      liff.login();
-    });
-
-    startDiagnostic();
-  </script>
-
-
-<hr>
-<h3>測試版後端連線（POST）</h3>
-<button id="testBackendButton" onclick="testBackend()">
-  測試 POST 連線
-</button>
-<p id="backendResult">尚未測試</p>
-
-<iframe
-  name="backendPostFrame"
-  id="backendPostFrame"
-  style="display:none">
-</iframe>
-
-<form
-  id="backendPostForm"
-  method="POST"
-  target="backendPostFrame"
-  style="display:none">
-<input type="hidden" name="action" id="backendAction" value="ping">
-<input type="hidden" name="ticket" id="backendTicket">
-<input type="hidden" name="idToken" id="backendIdToken">
-<input type="hidden" name="phone" id="backendPhone">
-</form>
+    <input type="hidden" name="action" value="ping">
+    <input type="hidden" name="ticket" id="backendTicket">
+  </form>
+</main>
 
 <script>
-const BACKEND_URL = "https://script.google.com/macros/s/AKfycbzAlcc6jm3rSgp0M0nqY4-trk8zr8-VaEGbnJY0sgf-H0gGb1OpjboIgH1hrKMiAGFK/exec";
+  const LIFF_ID = "2011929218-7iUfDvyE";
 
-let backendTimer = null;
-let backendAttempts = 0;
-let backendTicket = "";
+  // 請填入目前測試版 Apps Script 的 Web App /exec 網址。
+  // 不要填正式版網址。
+  const BACKEND_URL = "https://script.google.com/macros/s/AKfycbzAlcc6jm3rSgp0M0nqY4-trk8zr8-VaEGbnJY0sgf-H0gGb1OpjboIgH1hrKMiAGFK/exec";
 
-function finishBackendTest(message) {
-  clearTimeout(backendTimer);
+  let backendTicket = "";
+  let backendAttempts = 0;
+  let backendTimer = null;
 
-document.getElementById("testBackendButton").disabled = false;
-document.getElementById("queryQrButton").disabled = false;
-}
+  const MAX_ATTEMPTS = 15;
 
-
-function receiveBackendResult(data) {
-  if (!data) return;
-
-  if (data.pending && backendAttempts < 15) {
-    backendTimer = setTimeout(pollBackendResult, 1000);
-    return;
+  function showLiffResult(message) {
+    document.getElementById("liffResult").textContent = message;
   }
 
-  if (data.bound === true && data.participant) {
-    const p = data.participant;
-    const result = document.getElementById("myQrResult");
-    const qr = document.getElementById("testParticipantQr");
+  async function initLiff() {
+    try {
+      if (typeof liff === "undefined") {
+        throw new Error("LIFF SDK 尚未載入。");
+      }
 
-    result.textContent =
-      "查詢成功！姓名：" + (p.name || "") +
-      "；報到狀態：" + (p.status || "尚未報到");
+      await liff.init({ liffId: LIFF_ID });
 
-    if (p.qrUrl) {
-      qr.src =
-        "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" +
-        encodeURIComponent(p.qrUrl);
-      qr.style.display = "block";
-    } else {
-      qr.removeAttribute("src");
-      qr.style.display = "none";
+      showLiffResult(
+        "診斷 3：LIFF 初始化完成！" +
+        "\n是否在 LINE 內：" + (liff.isInClient() ? "是" : "否") +
+        "\n是否已登入：" + (liff.isLoggedIn() ? "是" : "否") +
+        "\n網域：" + window.location.hostname
+      );
+    } catch (error) {
+      showLiffResult(
+        "LIFF 初始化失敗：" +
+        (error && error.message ? error.message : String(error))
+      );
+    }
+  }
+
+  function finishBackendTest(message) {
+    clearTimeout(backendTimer);
+
+    document.getElementById("backendResult").textContent = message;
+    document.getElementById("testBackendButton").disabled = false;
+  }
+
+  function receiveBackendResult(data) {
+    if (!data) return;
+
+    if (data.pending) {
+      if (backendAttempts < MAX_ATTEMPTS) {
+        backendTimer = setTimeout(pollBackendResult, 1000);
+      } else {
+        finishBackendTest("等待後端結果逾時，請檢查測試版部署與取回流程。");
+      }
+      return;
     }
 
-    finishBackendTest("個人報到資料查詢完成。");
-    return;
-  }
+    if (data.success) {
+      finishBackendTest(
+        "成功！" + data.message +
+        (data.time ? "\n時間：" + data.time : "")
+      );
+      return;
+    }
 
-  if (data.bound === false) {
-    document.getElementById("myQrResult").textContent =
-      "LINE 身分已送交後端查詢，但這個 LINE 帳號尚未綁定參加者資料。";
-    finishBackendTest("查詢完成，尚未綁定。");
-    return;
-  }
-
-  if (data.success) {
-    finishBackendTest("成功！" + (data.message || "後端處理完成。"));
-    return;
-  }
-
-  finishBackendTest(
-    data.message || "後端處理失敗，請檢查程式設定。"
-  );
-}
-
-
-function pollBackendResult() {
-  backendAttempts++;
-
-  const oldScript = document.getElementById("backendPollScript");
-  if (oldScript) oldScript.remove();
-
-  const script = document.createElement("script");
-  script.id = "backendPollScript";
-
-  const callbackName = "receiveBackendResult";
-  script.src =
-    BACKEND_URL +
-    "?callback=" + encodeURIComponent(callbackName) +
-    "&ticket=" + encodeURIComponent(backendTicket) +
-    "&t=" + Date.now();
-
-  script.onerror = function () {
     finishBackendTest(
-      "取回結果失敗，請確認測試版部署網址及權限。"
+      data.message || "後端回傳失敗，請檢查程式設定。"
     );
-  };
-
-  document.body.appendChild(script);
-
-  if (backendAttempts >= 15) {
-    backendTimer = setTimeout(function () {
-      finishBackendTest("等待後端結果逾時，請再測試一次。");
-    }, 1000);
-  }
-}
-
-function testBackend() {
-  clearTimeout(backendTimer);
-
-  const button = document.getElementById("testBackendButton");
-  const result = document.getElementById("backendResult");
-
-  button.disabled = true;
-  result.textContent = "正在傳送 POST，請稍候……";
-
-  // 建立隨機測試識別碼，不包含個資
-  const bytes = new Uint8Array(16);
-  crypto.getRandomValues(bytes);
-
-  backendTicket = Array.from(bytes)
-    .map(b => b.toString(16).padStart(2, "0"))
-    .join("");
-
-  backendAttempts = 0;
-
-  const form = document.getElementById("backendPostForm");
-  form.action = BACKEND_URL;
-
-  document.getElementById("backendTicket").value = backendTicket;
-
-  // 先開始輪詢，避免 POST 回應較快時漏接結果
-  backendTimer = setTimeout(pollBackendResult, 1000);
-
-  try {
-    form.submit();
-  } catch (error) {
-    finishBackendTest("POST 傳送失敗，請檢查網址或程式碼。");
-  }
-}
-
-  
-function queryMyQr() {
-  const result = document.getElementById("myQrResult");
-
-  if (typeof liff === "undefined" ||
-      !liff.isLoggedIn()) {
-    result.textContent =
-      "請先在 LINE 內登入測試 LIFF，再查詢報到資料。";
-    return;
   }
 
-  const token = liff.getIDToken();
+  function pollBackendResult() {
+    backendAttempts++;
 
-  if (!token) {
-    result.textContent =
-      "無法取得 LINE ID Token，請確認 LIFF 已啟用 openid 權限。";
-    return;
+    const oldScript = document.getElementById("backendPollScript");
+    if (oldScript) oldScript.remove();
+
+    const script = document.createElement("script");
+    script.id = "backendPollScript";
+
+    script.src =
+      BACKEND_URL +
+      "?callback=receiveBackendResult" +
+      "&ticket=" + encodeURIComponent(backendTicket) +
+      "&t=" + Date.now();
+
+    script.onerror = function () {
+      finishBackendTest(
+        "取回結果失敗：JSONP 請求無法載入。" +
+        "\n請確認測試版 /exec 網址、部署權限及回應狀態碼。"
+      );
+    };
+
+    document.body.appendChild(script);
   }
 
-  clearTimeout(backendTimer);
+  function testBackend() {
+    clearTimeout(backendTimer);
 
-  backendTicket = Array.from(
-    crypto.getRandomValues(new Uint8Array(16))
-  ).map(b => b.toString(16).padStart(2, "0")).join("");
+    if (
+      !BACKEND_URL.startsWith("https://script.google.com/macros/s/") ||
+      !BACKEND_URL.endsWith("/exec")
+    ) {
+      finishBackendTest(
+        "請先把 BACKEND_URL 改成正確的測試版 Apps Script /exec 網址。"
+      );
+      return;
+    }
 
-  backendAttempts = 0;
+    const button = document.getElementById("testBackendButton");
+    const result = document.getElementById("backendResult");
 
-  document.getElementById("backendAction").value = "getMyQr";
-  document.getElementById("backendTicket").value = backendTicket;
-  document.getElementById("backendIdToken").value = token;
-  document.getElementById("backendPhone").value = "";
+    button.disabled = true;
+    result.textContent = "正在傳送 POST，請稍候……";
 
-  result.textContent = "正在驗證 LINE 身分並查詢資料……";
+    const bytes = new Uint8Array(16);
+    crypto.getRandomValues(bytes);
 
-  const qr = document.getElementById("testParticipantQr");
-  qr.style.display = "none";
-  qr.removeAttribute("src");
+    backendTicket = Array.from(bytes)
+      .map(b => b.toString(16).padStart(2, "0"))
+      .join("");
 
-  document.getElementById("testBackendButton").disabled = true;
-  document.getElementById("queryQrButton").disabled = true;
+    backendAttempts = 0;
 
-  backendTimer = setTimeout(pollBackendResult, 1000);
+    const form = document.getElementById("backendPostForm");
+    form.action = BACKEND_URL;
 
-  const form = document.getElementById("backendPostForm");
-  form.action = BACKEND_URL;
-  form.submit();
-}
+    document.getElementById("backendTicket").value = backendTicket;
+
+    // 先開始輪詢，再送出 POST，避免錯過快速回應。
+    backendTimer = setTimeout(pollBackendResult, 1000);
+
+    try {
+      form.submit();
+    } catch (error) {
+      finishBackendTest(
+        "POST 傳送失敗：" +
+        (error && error.message ? error.message : String(error))
+      );
+    }
+  }
+
+  window.addEventListener("load", initLiff);
 </script>
-
-  
-<hr>
-<h3>個人報到資料測試</h3>
-<button id="queryQrButton" onclick="queryMyQr()">
-  查詢我的報到資料
-</button>
-<div id="myQrResult" class="message">
-  請先在 LINE 內開啟測試 LIFF 網頁。
-</div>
-<img id="testParticipantQr"
-     alt="個人報到 QR Code"
-     style="display:none;width:240px;max-width:100%;margin-top:16px">
-
-
-
-  
-
 </body>
-
-
-
 </html>
