@@ -1,0 +1,98 @@
+
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LIFF 初始化診斷</title>
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      max-width: 640px;
+      margin: 30px auto;
+      padding: 20px;
+      line-height: 1.8;
+      overflow-wrap: anywhere;
+    }
+    #status {
+      padding: 14px;
+      background: #f2f2f2;
+      border-radius: 8px;
+      white-space: pre-wrap;
+    }
+    button {
+      padding: 10px 16px;
+      margin-top: 12px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h2>LIFF 初始化診斷</h2>
+  <p>這是暫時測試頁，不會連接正式報到資料。</p>
+  <div id="status">準備中……</div>
+  <button id="loginButton" hidden>使用 LINE 登入</button>
+
+  <script>
+    const LIFF_ID = "請稍後填入測試用LIFF_ID";
+
+    const statusBox = document.getElementById("status");
+    const loginButton = document.getElementById("loginButton");
+
+    function showStatus(message) {
+      statusBox.textContent = message;
+    }
+
+    async function startDiagnostic() {
+      showStatus(
+        "診斷 1：開始檢查 SDK" +
+        "\n網域：" + location.hostname +
+        "\n是否在 iframe：" + (window.self !== window.top ? "是" : "否")
+      );
+
+      if (typeof liff === "undefined") {
+        showStatus("錯誤：LIFF SDK 未載入。");
+        return;
+      }
+
+      if (!LIFF_ID || LIFF_ID.startsWith("請稍後")) {
+        showStatus(
+          "診斷 2：LIFF SDK 已載入。" +
+          "\n請先取得測試用 LIFF ID，再填入程式碼。"
+        );
+        return;
+      }
+
+      try {
+        showStatus("診斷 2：SDK 已載入，開始初始化 LIFF……");
+
+        await liff.init({ liffId: LIFF_ID });
+
+        showStatus(
+          "診斷 3：LIFF 初始化完成！" +
+          "\n是否在 LINE 內：" + (liff.isInClient() ? "是" : "否") +
+          "\n是否已登入：" + (liff.isLoggedIn() ? "是" : "否") +
+          "\n網域：" + location.hostname
+        );
+
+        if (!liff.isLoggedIn()) {
+          loginButton.hidden = false;
+        }
+      } catch (error) {
+        showStatus(
+          "LIFF 初始化失敗：" +
+          (error && error.message ? error.message : String(error)) +
+          "\n網域：" + location.hostname
+        );
+      }
+    }
+
+    loginButton.addEventListener("click", () => {
+      liff.login();
+    });
+
+    startDiagnostic();
+  </script>
+</body>
+</html>
