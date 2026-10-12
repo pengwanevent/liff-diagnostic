@@ -1,493 +1,143 @@
-
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport"
-        content="width=device-width, initial-scale=1">
-  <title>LIFF 初始化診斷</title>
-
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>活動報到系統</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-
   <style>
-    body {
-      font-family: Arial, "Noto Sans TC", sans-serif;
-      background: #f4f6f8;
-      color: #263238;
-      margin: 0;
-      padding: 20px 14px;
-    }
-
-    main {
-      max-width: 520px;
-      margin: auto;
-    }
-
-    section {
-      background: white;
-      padding: 20px;
-      margin-bottom: 16px;
-      border-radius: 12px;
-      box-shadow: 0 2px 10px #0000000d;
-    }
-
-    h2, h3 { margin-top: 0; }
-
-    button {
-      width: 100%;
-      padding: 13px;
-      margin-top: 12px;
-      border: 0;
-      border-radius: 8px;
-      background: #176b55;
-      color: white;
-      font-size: 16px;
-      cursor: pointer;
-    }
-
-    button:disabled {
-      opacity: .55;
-      cursor: not-allowed;
-    }
-
-    .message {
-      white-space: pre-wrap;
-      overflow-wrap: anywhere;
-      background: #f0f3f5;
-      padding: 12px;
-      border-radius: 8px;
-      line-height: 1.7;
-    }
+    *{box-sizing:border-box}body{margin:0;padding:20px 14px;background:#f4f6f8;color:#263238;font-family:Arial,"Noto Sans TC",sans-serif}
+    .card{max-width:480px;margin:0 auto;padding:24px 20px;background:#fff;border-radius:16px;box-shadow:0 3px 16px rgba(0,0,0,.07)}
+    h2{text-align:center;margin-top:0;font-size:23px}.muted{color:#68737d;font-size:14px;line-height:1.7}
+    label{display:block;margin:15px 0 6px;font-weight:bold}input{display:block;width:100%;padding:12px;font-size:16px;border:1px solid #ccd3d9;border-radius:8px}
+    button{width:100%;padding:14px;margin-top:14px;border:0;border-radius:9px;background:#176b55;color:#fff;font-size:16px;font-weight:bold;cursor:pointer}
+    button:disabled{opacity:.55}.secondary{background:#536779}.message{margin-top:16px;padding:12px;border-radius:8px;background:#f0f3f5;line-height:1.7;overflow-wrap:anywhere}
+    .qr{display:block;width:260px;max-width:100%;height:auto;margin:18px auto}.field{display:flex;justify-content:space-between;gap:14px;padding:12px 0;border-bottom:1px solid #edf0f2}
+    .field span:first-child{color:#68737d;flex-shrink:0}.field strong{text-align:right;overflow-wrap:anywhere}.hidden{display:none!important}.success{color:#176b55;font-weight:bold}.warning{color:#a33b30;font-weight:bold}
   </style>
 </head>
-
 <body>
-<main>
-  <section>
-    <h2>LIFF 初始化診斷</h2>
-    <p>這是暫時測試頁，不會連接正式報到資料。</p>
-    <div id="liffResult" class="message">正在初始化 LIFF……</div>
+<iframe name="backendPostFrame" class="hidden" title="後端連線"></iframe>
+<form id="backendPostForm" method="post" target="backendPostFrame" class="hidden">
+  <input name="action" id="postAction">
+  <input name="ticket" id="postTicket">
+  <input name="idToken" id="postIdToken">
+  <input name="phone" id="postPhone">
+</form>
+<main class="card">
+  <h2 id="pageTitle">活動報到系統</h2>
+  <div id="message" class="message" role="status">系統初始化中……</div>
+  <section id="bindSection" class="hidden">
+    <p class="muted">請輸入填寫 SurveyCake 問卷時使用的手機號碼。核對成功後即可取得個人報到 QR Code。</p>
+    <label for="phone">手機號碼</label>
+    <input id="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="例如：0937807396">
+    <button id="bindButton" onclick="submitBinding()">核對資料並綁定 LINE</button>
   </section>
-
-  <section>
-    <h3>測試版後端連線（POST）</h3>
-    <button id="testBackendButton" onclick="testBackend()">
-      測試 POST 連線
-    </button>
-    <div id="backendResult" class="message">尚未測試</div>
+  <section id="participantSection" class="hidden">
+    <div id="participantInfo"></div>
+    <img id="participantQr" class="qr hidden" alt="個人報到 QR Code">
+    <p class="muted" style="text-align:center">活動當天請出示此 QR Code，由工作人員掃描。</p>
+    <button class="secondary" onclick="loadMyQr()">重新整理我的報到資料</button>
   </section>
-
-<section>
-  <h3>個人報到資料測試</h3>
-  <button id="queryQrButton" onclick="queryMyQr()">
-    查詢我的報到資料
-  </button>
-  
-<div id="myQrResult" class="message">
-  請在 LINE 內登入後，再查詢報到資料。
-</div>
-
-<div style="margin-top:16px;">
-  <label for="phoneInput">問卷填寫的手機號碼</label>
-  <input
-    type="tel"
-    id="phoneInput"
-    placeholder="請輸入問卷填寫的手機號碼"
-    autocomplete="tel"
-    inputmode="tel"
-    style="box-sizing:border-box;width:100%;padding:12px;margin-top:8px;border:1px solid #ccc;border-radius:8px;font-size:16px;"
-  >
-</div>
-
-<button
-  id="bindPhoneButton"
-  type="button"
-  onclick="bindPhoneFromPage()"
->
-  綁定手機號碼
-</button>
-
-  <img
-  id="testParticipantQr"
-  alt="測試版個人報到 QR Code"
-  style="display:none;width:240px;max-width:100%;margin:16px auto;"
->
-</section>
-
-  <iframe
-    name="backendPostFrame"
-    id="backendPostFrame"
-    style="display:none">
-  </iframe>
-
-  <form
-    id="backendPostForm"
-    method="POST"
-    target="backendPostFrame"
-    style="display:none">
-
-   
-<input type="hidden" name="action" value="ping">
-<input type="hidden" name="idToken" id="backendIdToken">
-<input type="hidden" name="ticket" id="backendTicket">
-<input type="hidden" name="phone" id="backendPhone">
-
-  </form>
 </main>
-
 <script>
   const LIFF_ID = "2011929218-7iUfDvyE";
-
-  // 請填入目前測試版 Apps Script 的 Web App /exec 網址。
-  // 不要填正式版網址。
   const BACKEND_URL = "https://script.google.com/macros/s/AKfycbzAlcc6jm3rSgp0M0nqY4-trk8zr8-VaEGbnJY0sgf-H0gGb1OpjboIgH1hrKMiAGFK/exec";
+  let liffReady=false;
+  const $=id=>document.getElementById(id);
 
-  let backendTicket = "";
-  let backendAttempts = 0;
-  let backendTimer = null;
-
-  const MAX_ATTEMPTS = 15;
-
-  function showLiffResult(message) {
-    document.getElementById("liffResult").textContent = message;
+  function showMessage(text,type) { const el=$("message");el.textContent=text;el.className="message"+(type?" "+type:""); }
+  function showSection(id) { ["bindSection","participantSection"].forEach(s=>$(s).classList.add("hidden"));if(id)$(id).classList.remove("hidden"); }
+  function addField(container,label,value) {
+    const row=document.createElement("div");row.className="field";
+    const left=document.createElement("span");left.textContent=label;
+    const right=document.createElement("strong");right.textContent=value||"";
+    row.append(left,right);container.appendChild(row);
+  }
+  function renderParticipant(p) {
+    const c=$("participantInfo");c.replaceChildren();
+    addField(c,"姓名",p.name);addField(c,"期別學號",p.studentId);
+    addField(c,"參加人數",p.count?p.count+" 人":"未填寫");
+    addField(c,"飲食需求",p.diet||"未填寫");addField(c,"報到狀態",p.status);
+    const qr=$("participantQr");
+    if(p.qrUrl) {
+      qr.src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data="+encodeURIComponent(p.qrUrl);
+      qr.classList.remove("hidden");
+    } else { qr.removeAttribute("src");qr.classList.add("hidden"); }
+    showSection("participantSection");$("pageTitle").textContent="我的報到 QR Code";
+    showMessage(p.status==="已報到"?"這筆資料已完成報到。":"已取得參加者資料，請保存此 QR Code。","success");
   }
 
-  async function initLiff() {
-    try {
-      if (typeof liff === "undefined") {
-        throw new Error("LIFF SDK 尚未載入。");
-      }
-
-      await liff.init({ liffId: LIFF_ID });
-
-      showLiffResult(
-        "診斷 3：LIFF 初始化完成！" +
-        "\n是否在 LINE 內：" + (liff.isInClient() ? "是" : "否") +
-        "\n是否已登入：" + (liff.isLoggedIn() ? "是" : "否") +
-        "\n網域：" + window.location.hostname
-      );
-    } catch (error) {
-      showLiffResult(
-        "LIFF 初始化失敗：" +
-        (error && error.message ? error.message : String(error))
-      );
-    }
+  // POST 不直接讀取回應本文；以唯一 ticket 再透過 JSONP 取回結果。
+  function requestBackend(action, extra) {
+    return new Promise((resolve,reject)=>{
+      const ticket=Array.from(crypto.getRandomValues(new Uint8Array(24))).map(b=>(b%36).toString(36)).join("");
+      const form=$("backendPostForm");
+      form.action=BACKEND_URL;
+      $("postAction").value=action;
+      $("postTicket").value=ticket;
+      $("postIdToken").value=(extra&&extra.idToken)||"";
+      $("postPhone").value=(extra&&extra.phone)||"";
+      // 沿用已驗證可行的 hidden form + iframe POST 橋接，
+      // 再以 JSONP ticket 取回結果，避免跨網域讀取 POST 回應本文。
+      form.submit();
+      pollResult(ticket,resolve,reject,0);
+    });
   }
-
-
-function finishBackendTest(message) {
-  clearTimeout(backendTimer);
-
-  document.getElementById("backendResult").textContent = message;
-  document.getElementById("testBackendButton").disabled = false;
-const bindButton = document.getElementById("bindPhoneButton");
-if (bindButton) bindButton.disabled = false;
-  const queryButton = document.getElementById("queryQrButton");
-  if (queryButton) queryButton.disabled = false;
-}
-
-
-
-let currentAction = "ping";
-
-
-
-function showParticipantData(p, title) {
-  const result = document.getElementById("myQrResult");
-  const qr = document.getElementById("testParticipantQr");
-
-  result.textContent =
-    title + "\n" +
-    "姓名：" + (p.name || "未提供") + "\n" +
-    "期別學號：" + (p.studentId || "未提供") + "\n" +
-    "參加人數：" + (p.count || "未填寫") + "\n" +
-    "飲食需求：" + (p.diet || "未填寫") + "\n" +
-    "報到狀態：" + (p.status || "未提供");
-
-  if (p.qrUrl) {
-    qr.src =
-      "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" +
-      encodeURIComponent(p.qrUrl);
-    qr.style.display = "block";
-  } else {
-    qr.style.display = "none";
-    qr.removeAttribute("src");
-  }
-}
-
-
-  
-
-function receiveBackendResult(data) {
-  if (!data) return;
-
-  if (data.pending) {
-    if (backendAttempts < MAX_ATTEMPTS) {
-      backendTimer = setTimeout(pollBackendResult, 1000);
-    } else {
-      finishBackendTest("等待後端結果逾時，請檢查測試版部署與取回流程。");
-      document.getElementById("myQrResult").textContent =
-        "查詢逾時，請稍後再試。";
-    }
-    return;
-  }
-
-  // 個人報到資料查詢或手機號碼綁定結果
-  if (
-    currentAction === "getMyQr" ||
-    currentAction === "bindPhone"
-  ) {
-    const result = document.getElementById("myQrResult");
-    const qr = document.getElementById("testParticipantQr");
-
-    if (data.bound === false) {
-      result.textContent =
-        "LINE 身分驗證成功，但這個 LINE 帳號尚未綁定參加者資料。";
-
-      qr.style.display = "none";
-      qr.removeAttribute("src");
-
-      finishBackendTest("個人資料查詢完成：尚未綁定。");
-      return;
-    }
-
-    if (data.bound === true && data.participant) {
-      const title = currentAction === "bindPhone"
-        ? "手機號碼綁定成功！"
-        : "查詢成功！";
-
-      showParticipantData(data.participant, title);
-
-      finishBackendTest(
-        currentAction === "bindPhone"
-          ? "手機號碼綁定成功，已取得個人報到資料。"
-          : "個人報到資料查詢成功。"
-      );
-      return;
-    }
-
-    result.textContent =
-      data.message || "操作失敗，請檢查測試版後端設定。";
-
-    finishBackendTest(result.textContent);
-    return;
-  }
-
-  // 原有 ping 測試結果
-  if (data.success) {
-    finishBackendTest(
-      "成功！" + data.message +
-      (data.time ? "\n時間：" + data.time : "")
-    );
-    return;
-  }
-
-  finishBackendTest(
-    data.message || "後端回傳失敗，請檢查程式設定。"
-  );
-}
-
-  
-
-  
-function queryMyQr() {
-  const result = document.getElementById("myQrResult");
-
-  if (typeof liff === "undefined" || !liff.isLoggedIn()) {
-    result.textContent = "請先在 LINE 內完成登入，再查詢報到資料。";
-    return;
-  }
-
-  const token = liff.getIDToken();
-
-  if (!token) {
-    result.textContent =
-      "無法取得 LINE ID Token，請確認 LIFF 已啟用 openid 權限。";
-    return;
-  }
-
-  clearTimeout(backendTimer);
-
-  const bytes = new Uint8Array(16);
-  crypto.getRandomValues(bytes);
-
-  backendTicket = Array.from(bytes)
-    .map(b => b.toString(16).padStart(2, "0"))
-    .join("");
-
-  backendAttempts = 0;
-  currentAction = "getMyQr";
-
-  result.textContent = "正在驗證 LINE 身分並查詢測試版資料……";
-
-  const qr = document.getElementById("testParticipantQr");
-  qr.style.display = "none";
-  qr.removeAttribute("src");
-
-  document.getElementById("testBackendButton").disabled = true;
-  document.getElementById("queryQrButton").disabled = true;
-
-  document.getElementById("backendPostForm").action = BACKEND_URL;
-  document.querySelector('#backendPostForm [name="action"]').value =
-    "getMyQr";
-  document.getElementById("backendTicket").value = backendTicket;
-  document.getElementById("backendIdToken").value = token;
-
-  backendTimer = setTimeout(pollBackendResult, 1000);
-
-  try {
-    document.getElementById("backendPostForm").submit();
-  } catch (error) {
-    result.textContent =
-      "查詢送出失敗：" +
-      (error && error.message ? error.message : String(error));
-
-    finishBackendTest(result.textContent);
-  }
-}
-
-  
-function bindPhoneFromPage() {
-  const result = document.getElementById("myQrResult");
-  const phone = document.getElementById("phoneInput").value.trim();
-
-  if (typeof liff === "undefined" || !liff.isLoggedIn()) {
-    result.textContent = "請先在 LINE 內完成登入，再綁定手機號碼。";
-    return;
-  }
-
-  if (!phone) {
-    result.textContent = "請先輸入問卷填寫的手機號碼。";
-    return;
-  }
-
-  const token = liff.getIDToken();
-
-  if (!token) {
-    result.textContent =
-      "無法取得 LINE ID Token，請確認 LIFF 已啟用 openid 權限。";
-    return;
-  }
-
-  clearTimeout(backendTimer);
-
-  const bytes = new Uint8Array(16);
-  crypto.getRandomValues(bytes);
-
-  backendTicket = Array.from(bytes)
-    .map(b => b.toString(16).padStart(2, "0"))
-    .join("");
-
-  backendAttempts = 0;
-  currentAction = "bindPhone";
-
-  result.textContent = "正在驗證 LINE 身分及核對手機號碼……";
-
-  const qr = document.getElementById("testParticipantQr");
-  qr.style.display = "none";
-  qr.removeAttribute("src");
-
-  document.getElementById("testBackendButton").disabled = true;
-  document.getElementById("queryQrButton").disabled = true;
-  document.getElementById("bindPhoneButton").disabled = true;
-
-  const form = document.getElementById("backendPostForm");
-  form.action = BACKEND_URL;
-
-  document.querySelector('#backendPostForm [name="action"]').value =
-    "bindPhone";
-
-  document.getElementById("backendTicket").value = backendTicket;
-  document.getElementById("backendIdToken").value = token;
-  document.getElementById("backendPhone").value = phone;
-
-  backendTimer = setTimeout(pollBackendResult, 1000);
-
-  try {
-    form.submit();
-  } catch (error) {
-    result.textContent =
-      "手機號碼綁定送出失敗：" +
-      (error && error.message ? error.message : String(error));
-
-    finishBackendTest(result.textContent);
-  }
-}
-
-
-  function pollBackendResult() {
-    backendAttempts++;
-
-    const oldScript = document.getElementById("backendPollScript");
-    if (oldScript) oldScript.remove();
-
-    const script = document.createElement("script");
-    script.id = "backendPollScript";
-
-    script.src =
-      BACKEND_URL +
-      "?callback=receiveBackendResult" +
-      "&ticket=" + encodeURIComponent(backendTicket) +
-      "&t=" + Date.now();
-
-    script.onerror = function () {
-      finishBackendTest(
-        "取回結果失敗：JSONP 請求無法載入。" +
-        "\n請確認測試版 /exec 網址、部署權限及回應狀態碼。"
-      );
+  function pollResult(ticket,resolve,reject,attempt) {
+    if(attempt>=12) { reject(new Error("等待測試後端回覆逾時，請稍後重試。"));return; }
+    const callback="jsonp_"+Date.now()+"_"+Math.floor(Math.random()*1000000);
+    const script=document.createElement("script");
+    const cleanup=()=>{try{delete window[callback]}catch(e){}script.remove();};
+    let finished=false;
+    window[callback]=data=>{
+      finished=true;cleanup();
+      if(data&&data.pending) { setTimeout(()=>pollResult(ticket,resolve,reject,attempt+1),500);return; }
+      if(!data||data.success===false) reject(new Error(data&&data.message?data.message:"後端處理失敗。"));
+      else resolve(data);
     };
-
+    script.onerror=()=>{if(finished)return;cleanup();setTimeout(()=>pollResult(ticket,resolve,reject,attempt+1),500);};
+    script.src=BACKEND_URL+"?callback="+encodeURIComponent(callback)+"&ticket="+encodeURIComponent(ticket)+"&_="+Date.now();
     document.body.appendChild(script);
   }
-
-  function testBackend() {
-    currentAction = "ping";
-    clearTimeout(backendTimer);
-
-    if (
-      !BACKEND_URL.startsWith("https://script.google.com/macros/s/") ||
-      !BACKEND_URL.endsWith("/exec")
-    ) {
-      finishBackendTest(
-        "請先把 BACKEND_URL 改成正確的測試版 Apps Script /exec 網址。"
-      );
-      return;
-    }
-
-    const button = document.getElementById("testBackendButton");
-    const result = document.getElementById("backendResult");
-
-    button.disabled = true;
-    result.textContent = "正在傳送 POST，請稍候……";
-
-    const bytes = new Uint8Array(16);
-    crypto.getRandomValues(bytes);
-
-    backendTicket = Array.from(bytes)
-      .map(b => b.toString(16).padStart(2, "0"))
-      .join("");
-
-    backendAttempts = 0;
-
-    const form = document.getElementById("backendPostForm");
-    form.action = BACKEND_URL;
-
-    document.getElementById("backendTicket").value = backendTicket;
-
-    // 先開始輪詢，再送出 POST，避免錯過快速回應。
-    backendTimer = setTimeout(pollBackendResult, 1000);
-
+  async function loadMyQr() {
+    if(!liffReady||!liff.isLoggedIn()) { showMessage("請先登入 LINE。","warning");return; }
+    const token=liff.getIDToken();
+    if(!token) { showMessage("無法取得 LINE ID Token，請確認 LIFF 已啟用 openid 權限。","warning");return; }
+    showMessage("查詢報到資料中……");
     try {
-      form.submit();
-    } catch (error) {
-      finishBackendTest(
-        "POST 傳送失敗：" +
-        (error && error.message ? error.message : String(error))
-      );
-    }
+      const result=await requestBackend("getMyQr",{idToken:token});
+      if(!result.bound) { showSection("bindSection");$("pageTitle").textContent="綁定我的報到資料";showMessage("尚未綁定，請輸入問卷填寫的手機號碼。");return; }
+      renderParticipant(result.participant);
+    } catch(err) { showMessage(err.message||"查詢失敗。","warning"); }
   }
-
-  window.addEventListener("load", initLiff);
+  async function submitBinding() {
+    const phone=$("phone").value.trim();
+    if(!phone) { showMessage("請輸入手機號碼。","warning");return; }
+    if(!liffReady||!liff.isLoggedIn()) { showMessage("請先登入 LINE。","warning");return; }
+    const token=liff.getIDToken();
+    if(!token) { showMessage("無法取得 LINE ID Token，請確認 openid 權限。","warning");return; }
+    $("bindButton").disabled=true;showMessage("正在核對手機號碼並綁定 LINE……");
+    try {
+      const result=await requestBackend("bindPhone",{phone,idToken:token});
+      if(result.ok&&result.participant) { renderParticipant(result.participant);showMessage("LINE 綁定成功！","success"); }
+      else throw new Error(result.message||"綁定未完成。");
+    } catch(err) { showMessage(err.message||"綁定失敗。","warning"); }
+    finally { $("bindButton").disabled=false; }
+  }
+  async function initApp() {
+    try {
+      if(typeof liff==="undefined") throw new Error("LIFF SDK 尚未載入。");
+      await liff.init({liffId:LIFF_ID});liffReady=true;
+      if(!liff.isLoggedIn()) {
+        showMessage("請登入 LINE，以取得個人報到 QR Code。");
+        const button=document.createElement("button");button.textContent="使用 LINE 登入";button.onclick=()=>liff.login();
+        $("message").appendChild(document.createElement("br"));$("message").appendChild(button);return;
+      }
+      await loadMyQr();
+    } catch(err) { showMessage("LINE 初始化失敗："+(err&&err.message?err.message:String(err)),"warning"); }
+  }
+  window.addEventListener("load",initApp);
 </script>
 </body>
 </html>
