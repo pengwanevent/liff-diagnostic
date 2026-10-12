@@ -97,46 +97,124 @@
 
 
 <hr>
-<h3>測試版後端連線</h3>
-<button onclick="testBackend()">測試後端連線</button>
+<h3>測試版後端連線（POST）</h3>
+<button id="testBackendButton" onclick="testBackend()">
+  測試 POST 連線
+</button>
 <p id="backendResult">尚未測試</p>
+
+<iframe
+  name="backendPostFrame"
+  id="backendPostFrame"
+  style="display:none">
+</iframe>
+
+<form
+  id="backendPostForm"
+  method="POST"
+  target="backendPostFrame"
+  style="display:none">
+  <input type="hidden" name="action" value="ping">
+  <input type="hidden" name="ticket" id="backendTicket">
+</form>
 
 <script>
 const BACKEND_URL = "https://script.google.com/macros/s/AKfycbzAlcc6jm3rSgp0M0nqY4-trk8zr8-VaEGbnJY0sgf-H0gGb1OpjboIgH1hrKMiAGFK/exec";
 
-function handleBackendResponse(data) {
-  const result = document.getElementById("backendResult");
+let backendTimer = null;
+let backendAttempts = 0;
+let backendTicket = "";
 
-  if (data && data.success) {
-    result.textContent =
-      "成功！" + data.message;
-  } else {
-    result.textContent = "後端回應異常";
+function finishBackendTest(message) {
+  clearTimeout(backendTimer);
+
+  document.getElementById("backendResult").textContent = message;
+  document.getElementById("testBackendButton").disabled = false;
+}
+
+function receiveBackendResult(data) {
+  if (!data) return;
+
+  if (data.success) {
+    finishBackendTest("成功！" + data.message);
+    return;
+  }
+
+  if (data.pending && backendAttempts < 15) {
+    backendTimer = setTimeout(pollBackendResult, 1000);
+    return;
+  }
+
+  finishBackendTest("尚未收到結果，請稍後再試。");
+}
+
+function pollBackendResult() {
+  backendAttempts++;
+
+  const oldScript = document.getElementById("backendPollScript");
+  if (oldScript) oldScript.remove();
+
+  const script = document.createElement("script");
+  script.id = "backendPollScript";
+
+  const callbackName = "receiveBackendResult";
+  script.src =
+    BACKEND_URL +
+    "?callback=" + encodeURIComponent(callbackName) +
+    "&ticket=" + encodeURIComponent(backendTicket) +
+    "&t=" + Date.now();
+
+  script.onerror = function () {
+    finishBackendTest(
+      "取回結果失敗，請確認測試版部署網址及權限。"
+    );
+  };
+
+  document.body.appendChild(script);
+
+  if (backendAttempts >= 15) {
+    backendTimer = setTimeout(function () {
+      finishBackendTest("等待後端結果逾時，請再測試一次。");
+    }, 1000);
   }
 }
 
 function testBackend() {
+  clearTimeout(backendTimer);
+
+  const button = document.getElementById("testBackendButton");
   const result = document.getElementById("backendResult");
-  result.textContent = "連線測試中……";
 
-  const oldScript = document.getElementById("backendTestScript");
-  if (oldScript) oldScript.remove();
+  button.disabled = true;
+  result.textContent = "正在傳送 POST，請稍候……";
 
-  const script = document.createElement("script");
-  script.id = "backendTestScript";
-  script.src =
-    BACKEND_URL +
-    "?callback=handleBackendResponse&t=" +
-    Date.now();
+  // 建立隨機測試識別碼，不包含個資
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
 
-  script.onerror = function () {
-    result.textContent =
-      "連線失敗，請檢查網址或部署設定。";
-  };
+  backendTicket = Array.from(bytes)
+    .map(b => b.toString(16).padStart(2, "0"))
+    .join("");
 
-  document.body.appendChild(script);
+  backendAttempts = 0;
+
+  const form = document.getElementById("backendPostForm");
+  form.action = BACKEND_URL;
+
+  document.getElementById("backendTicket").value = backendTicket;
+
+  // 先開始輪詢，避免 POST 回應較快時漏接結果
+  backendTimer = setTimeout(pollBackendResult, 1000);
+
+  try {
+    form.submit();
+  } catch (error) {
+    finishBackendTest("POST 傳送失敗，請檢查網址或程式碼。");
+  }
 }
 </script>
+
+
 </body>
 
 
