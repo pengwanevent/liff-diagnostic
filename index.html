@@ -94,5 +94,51 @@
 
     startDiagnostic();
   </script>
+
+
+<hr>
+<h3>測試版後端連線</h3>
+<button onclick="testBackend()">測試後端連線</button>
+<p id="backendResult">尚未測試</p>
+
+<script>
+const BACKEND_URL = "https://script.google.com/macros/s/AKfycbzAlcc6jm3rSgp0M0nqY4-trk8zr8-VaEGbnJY0sgf-H0gGb1OpjboIgH1hrKMiAGFK/exec";
+
+function handleBackendResponse(data) {
+  const result = document.getElementById("backendResult");
+
+  if (data && data.success) {
+    result.textContent =
+      "成功！" + data.message;
+  } else {
+    result.textContent = "後端回應異常";
+  }
+}
+
+function testBackend() {
+  const result = document.getElementById("backendResult");
+  result.textContent = "連線測試中……";
+
+  const oldScript = document.getElementById("backendTestScript");
+  if (oldScript) oldScript.remove();
+
+  const script = document.createElement("script");
+  script.id = "backendTestScript";
+  script.src =
+    BACKEND_URL +
+    "?callback=handleBackendResponse&t=" +
+    Date.now();
+
+  script.onerror = function () {
+    result.textContent =
+      "連線失敗，請檢查網址或部署設定。";
+  };
+
+  document.body.appendChild(script);
+}
+</script>
 </body>
+
+
+
 </html>
