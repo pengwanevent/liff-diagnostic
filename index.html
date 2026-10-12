@@ -77,6 +77,22 @@
     <div id="backendResult" class="message">尚未測試</div>
   </section>
 
+<section>
+  <h3>個人報到資料測試</h3>
+  <button id="queryQrButton" onclick="queryMyQr()">
+    查詢我的報到資料
+  </button>
+  <div id="myQrResult" class="message">
+    請在 LINE 內登入後，再查詢報到資料。
+  </div>
+  <img
+    id="testParticipantQr"
+    alt="測試版個人報到 QR Code
+    "
+    style="display:none;width:240px;max-width:100%;margin:16px auto;"
+  >
+</section>
+
   <iframe
     name="backendPostFrame"
     id="backendPostFrame"
@@ -90,7 +106,9 @@
     style="display:none">
 
     <input type="hidden" name="action" value="ping">
+    <input type="hidden" name="idToken" id="backendIdToken">
     <input type="hidden" name="ticket" id="backendTicket">
+    <input type="hidden" name="idToken" id="backendIdToken">
   </form>
 </main>
 
@@ -133,37 +151,152 @@
     }
   }
 
-  function finishBackendTest(message) {
-    clearTimeout(backendTimer);
 
-    document.getElementById("backendResult").textContent = message;
-    document.getElementById("testBackendButton").disabled = false;
+function finishBackendTest(message) {
+  clearTimeout(backendTimer);
+
+  document.getElementById("backendResult").textContent = message;
+  document.getElementById("testBackendButton").disabled = false;
+
+  const queryButton = document.getElementById("queryQrButton");
+  if (queryButton) queryButton.disabled = false;
+}
+
+
+
+let currentAction = "ping";
+
+function receiveBackendResult(data) {
+  if (!data) return;
+
+  if (data.pending) {
+    if (backendAttempts < MAX_ATTEMPTS) {
+      backendTimer = setTimeout(pollBackendResult, 1000);
+    } else {
+      finishBackendTest("等待後端結果逾時，請檢查測試版部署與取回流程。");
+      document.getElementById("myQrResult").textContent =
+        "查詢逾時，請稍後再試。";
+    }
+    return;
   }
 
-  function receiveBackendResult(data) {
-    if (!data) return;
+  // 個人報到資料查詢結果
+  if (currentAction === "getMyQr") {
+    const result = document.getElementById("myQrResult");
+    const qr = document.getElementById("testParticipantQr");
 
-    if (data.pending) {
-      if (backendAttempts < MAX_ATTEMPTS) {
-        backendTimer = setTimeout(pollBackendResult, 1000);
+    if (data.bound === false) {
+      result.textContent =
+        "LINE 身分驗證成功，但這個 LINE 帳號尚未綁定參加者資料。";
+      qr.style.display = "none";
+      qr.removeAttribute("src");
+      finishBackendTest("個人資料查詢完成：尚未綁定。");
+      return;
+    }
+
+    if (data.bound === true && data.participant) {
+      const p = data.participant;
+
+      result.textContent =
+        "查詢成功！\n" +
+        "姓名：" + (p.name || "未提供") + "\n" +
+        "期別學號：" + (p.studentId || "未提供") + "\n" +
+        "參加人數：" + (p.count || "未填寫") + "\n" +
+        "飲食需求：" + (p.diet || "未填寫") + "\n" +
+        "報到狀態：" + (p.status || "未提供");
+
+      if (p.qrUrl) {
+        qr.src =
+          "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" +
+          encodeURIComponent(p.qrUrl);
+        qr.style.display = "block";
       } else {
-        finishBackendTest("等待後端結果逾時，請檢查測試版部署與取回流程。");
+        qr.style.display = "none";
+        qr.removeAttribute("src");
       }
+
+      finishBackendTest("個人報到資料查詢成功。");
       return;
     }
 
-    if (data.success) {
-      finishBackendTest(
-        "成功！" + data.message +
-        (data.time ? "\n時間：" + data.time : "")
-      );
-      return;
-    }
-
-    finishBackendTest(
-      data.message || "後端回傳失敗，請檢查程式設定。"
-    );
+    result.textContent =
+      data.message || "查詢失敗，請檢查測試版後端設定。";
+    finishBackendTest(result.textContent);
+    return;
   }
+
+  // 原有 ping 測試結果
+  if (data.success) {
+    finishBackendTest(
+      "成功！" + data.message +
+      (data.time ? "\n時間：" + data.time : "")
+    );
+    return;
+  }
+
+  finishBackendTest(
+    data.message || "後端回傳失敗，請檢查程式設定。"
+  );
+}
+
+  
+function queryMyQr() {
+  const result = document.getElementById("myQrResult");
+
+  if (typeof liff === "undefined" || !liff.isLoggedIn()) {
+    result.textContent = "請先在 LINE 內完成登入，再查詢報到資料。";
+    return;
+  }
+
+  const token = liff.getIDToken();
+
+  if (!token) {
+    result.textContent =
+      "無法取得 LINE ID Token，請確認 LIFF 已啟用 openid 權限。";
+    return;
+  }
+
+  clearTimeout(backendTimer);
+
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+
+  backendTicket = Array.from(bytes)
+    .map(b => b.toString(16).padStart(2, "0"))
+    .join("");
+
+  backendAttempts = 0;
+  currentAction = "getMyQr";
+
+  result.textContent = "正在驗證 LINE 身分並查詢測試版資料……";
+
+  const qr = document.getElementById("testParticipantQr");
+  qr.style.display = "none";
+  qr.removeAttribute("src");
+
+  document.getElementById("testBackendButton").disabled = true;
+  document.getElementById("queryQrButton").disabled = true;
+
+  document.getElementById("backendPostForm").action = BACKEND_URL;
+  document.querySelector('#backendPostForm [name="action"]').value =
+    "getMyQr";
+  document.getElementById("backendTicket").value = backendTicket;
+  document.getElementById("backendIdToken").value = token;
+
+  backendTimer = setTimeout(pollBackendResult, 1000);
+
+  try {
+    document.getElementById("backendPostForm").submit();
+  } catch (error) {
+    result.textContent =
+      "查詢送出失敗：" +
+      (error && error.message ? error.message : String(error));
+
+    finishBackendTest(result.textContent);
+  }
+}
+
+  
 
   function pollBackendResult() {
     backendAttempts++;
@@ -191,6 +324,7 @@
   }
 
   function testBackend() {
+    currentAction = "ping";
     clearTimeout(backendTimer);
 
     if (
