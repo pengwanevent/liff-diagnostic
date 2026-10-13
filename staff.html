@@ -4,28 +4,26 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#edf5ee">
+  <meta name="theme-color" content="#FFF3F7">
   <title>活動報到｜工作人員測試版</title>
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
   <style>
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     :root {
-      --bg: #f2f7f1;
-      --card: #ffffff;
-      --green: #287653;
-      --green-dark: #205f42;
-      --green-light: #e5f3e8;
-      --text: #26372d;
-      --muted: #64746a;
-      --border: #dce8dd;
-      --orange: #a85c08;
-      --orange-bg: #fff2dc;
-      --red: #b42318;
-      --red-bg: #fff0ee;
+      --bg: #FFF3F7;
+      --card: #FFFFFF;
+      --pink: #C96F95;
+      --pink-dark: #9F4E72;
+      --pink-light: #FBE3ED;
+      --text: #513744;
+      --muted: #896D7A;
+      --border: #F0D2DF;
+      --orange: #A85C08;
+      --orange-bg: #FFF2DC;
+      --red: #B42318;
+      --red-bg: #FFF0EE;
     }
 
     body {
@@ -54,14 +52,16 @@
 
     .hero-icon {
       display: flex;
-      width: 68px;
-      height: 68px;
-      margin: 0 auto 10px;
+      width: 88px;
+      height: 88px;
+      margin: 0 auto 12px;
       align-items: center;
       justify-content: center;
-      border-radius: 22px;
-      background: var(--green-light);
-      font-size: 36px;
+      border-radius: 28px;
+      background: linear-gradient(145deg, #FFE5EF, #F8D1E1);
+      border: 2px solid #F0C4D7;
+      box-shadow: 0 5px 14px rgba(159, 78, 114, 0.12);
+      font-size: 54px;
     }
 
     h1 {
@@ -80,9 +80,7 @@
       text-align: center;
     }
 
-    p {
-      margin: 8px 0 14px;
-    }
+    p { margin: 8px 0 14px; }
 
     .subtitle {
       margin: 8px 0 0;
@@ -97,12 +95,10 @@
       border-radius: 22px;
       padding: 22px 18px;
       margin: 16px 0;
-      box-shadow: 0 4px 16px rgba(36, 76, 48, 0.055);
+      box-shadow: 0 4px 16px rgba(159, 78, 114, 0.07);
     }
 
-    .hidden {
-      display: none !important;
-    }
+    .hidden { display: none !important; }
 
     .muted {
       color: var(--muted);
@@ -110,8 +106,7 @@
       text-align: center;
     }
 
-    input,
-    button {
+    input, button {
       width: 100%;
       min-height: 56px;
       padding: 14px 16px;
@@ -130,40 +125,33 @@
     }
 
     input:focus {
-      outline: 3px solid #b7dfc2;
-      border-color: var(--green);
+      outline: 3px solid #F8D1E1;
+      border-color: var(--pink);
     }
 
     button {
       border: 0;
-      background: var(--green);
+      background: var(--pink);
       color: #fff;
       font-weight: 750;
       cursor: pointer;
       transition: background 0.15s ease;
     }
 
-    button:hover {
-      background: var(--green-dark);
-    }
-
-    button:active {
-      transform: scale(0.99);
-    }
+    button:hover { background: var(--pink-dark); }
+    button:active { transform: scale(0.99); }
 
     button.secondary {
-      color: var(--green-dark);
-      background: #eaf2eb;
-      border: 1px solid #d5e5d8;
+      color: var(--pink-dark);
+      background: #FBEAF1;
+      border: 1px solid #F0D2DF;
     }
 
-    button.secondary:hover {
-      background: #dcecdf;
-    }
+    button.secondary:hover { background: #F6DCE8; }
 
     button.danger {
       color: #fff;
-      background: #a43a32;
+      background: #A43A52;
     }
 
     button:disabled {
@@ -171,43 +159,31 @@
       cursor: not-allowed;
     }
 
-    .section-heading {
-      text-align: center;
-      margin-bottom: 8px;
-    }
-
     .login-badge {
       display: inline-block;
       padding: 7px 14px;
       border-radius: 999px;
-      background: var(--green-light);
-      color: var(--green-dark);
+      background: var(--pink-light);
+      color: var(--pink-dark);
       font-size: 16px;
       font-weight: 700;
       text-align: center;
     }
 
-    .center {
-      text-align: center;
-    }
+    .center, #loginStatus { text-align: center; }
 
-    #loginStatus {
-      text-align: center;
-      margin-bottom: 12px;
-    }
+    #loginStatus { margin-bottom: 12px; }
 
     #reader {
       width: 100%;
       overflow: hidden;
       border-radius: 16px;
-      background: #f7faf7;
+      background: #FFF8FB;
       border: 1px solid var(--border);
       margin: 16px auto;
     }
 
-    #reader video {
-      border-radius: 12px;
-    }
+    #reader video { border-radius: 12px; }
 
     #reader__dashboard_section_csr button,
     #reader__dashboard_section_swaplink {
@@ -215,10 +191,11 @@
     }
 
     .scan-hint {
-      background: #f0f7f0;
+      background: #FFF0F6;
+      border: 1px solid #F6D8E5;
       border-radius: 14px;
       padding: 12px;
-      color: var(--green-dark);
+      color: var(--pink-dark);
       text-align: center;
       font-size: 16px;
     }
@@ -230,13 +207,14 @@
       padding: 14px 10px;
       border-radius: 14px;
       margin: 16px 0;
-      background: var(--green-light);
-      color: var(--green-dark);
+      background: var(--pink-light);
+      color: var(--pink-dark);
       overflow-wrap: anywhere;
     }
 
     .ok {
-      color: var(--green-dark);
+      color: var(--pink-dark);
+      background: var(--pink-light);
     }
 
     .warn {
@@ -271,9 +249,7 @@
       background: #fff;
     }
 
-    .field:last-child {
-      border-bottom: 0;
-    }
+    .field:last-child { border-bottom: 0; }
 
     .label {
       color: var(--muted);
@@ -296,13 +272,12 @@
       padding: 12px 4px;
     }
 
-    .message-card {
-      padding: 14px 18px;
-    }
+    .message-card { padding: 14px 18px; }
 
     .next-button {
       min-height: 62px;
       font-size: 21px;
+      margin: 0 0 20px;
     }
 
     .footer-note {
@@ -324,9 +299,7 @@
       text-align: center;
     }
 
-    dialog::backdrop {
-      background: rgba(28, 48, 34, 0.58);
-    }
+    dialog::backdrop { background: rgba(81, 55, 68, 0.48); }
 
     #confirmText {
       white-space: pre-wrap;
@@ -343,29 +316,14 @@
         padding-right: 10px;
       }
 
-      .card {
-        padding: 18px 13px;
-      }
-
-      h1 {
-        font-size: 27px;
-      }
-
-      .participant-name {
-        font-size: 28px;
-      }
-
-      .value {
-        font-size: 20px;
-      }
+      .card { padding: 18px 13px; }
+      h1 { font-size: 27px; }
+      .participant-name { font-size: 28px; }
+      .value { font-size: 20px; }
     }
 
     @media (prefers-reduced-motion: reduce) {
-      *,
-      *::before,
-      *::after {
-        transition: none !important;
-      }
+      *, *::before, *::after { transition: none !important; }
     }
   </style>
 </head>
@@ -373,7 +331,7 @@
 <body>
 <main>
   <header class="hero">
-    <div class="hero-icon" aria-hidden="true">🌿</div>
+    <div class="hero-icon" aria-label="Q版大象" role="img">🐘</div>
     <h1>活動報到系統</h1>
     <p class="subtitle">工作人員專用｜測試版</p>
   </header>
@@ -396,6 +354,17 @@
     </form>
   </section>
 
+  <!-- 參加者資料放在相機區上方 -->
+  <section class="card hidden" id="participantPanel">
+    <button id="nextButton" class="secondary next-button">掃描下一位</button>
+
+    <h2>參加者資料</h2>
+    <div id="participantInfo" class="participant-info"></div>
+    <p id="participantStatus" class="status" aria-live="polite"></p>
+    <button id="checkInButton">確認報到</button>
+  </section>
+
+  <!-- 相機及登入狀態區放在下方 -->
   <section class="card hidden" id="scannerPanel">
     <div id="loginStatus">
       <span class="login-badge">✓ 工作人員已登入</span>
@@ -413,14 +382,6 @@
     <button id="startButton">啟動相機</button>
     <button id="stopButton" class="secondary">停止相機</button>
     <button id="logoutButton" class="danger">登出</button>
-  </section>
-
-  <section class="card hidden" id="participantPanel">
-    <h2>參加者資料</h2>
-    <div id="participantInfo" class="participant-info"></div>
-    <p id="participantStatus" class="status" aria-live="polite"></p>
-    <button id="checkInButton">確認報到</button>
-    <button id="nextButton" class="secondary next-button">掃描下一位</button>
   </section>
 
   <section class="card message-card">
@@ -442,10 +403,6 @@
 <script>
 "use strict";
 
-/*
- * 僅供測試版使用。
- * 若更換測試版部署網址，請只修改這一行。
- */
 const WEB_APP_URL =
   "https://script.google.com/macros/s/AKfycbzAlcc6jm3rSgp0M0nqY4-trk8zr8-VaEGbnJY0sgf-H0gGb1OpjboIgH1hrKMiAGFK/exec";
 
@@ -478,8 +435,8 @@ function newTicket() {
 }
 
 /*
- * POST 使用隱藏 iframe，避免跨來源 fetch 的 CORS 限制。
- * 接著透過 JSONP 輪詢 doGet 取回同一張 ticket 的結果。
+ * POST 使用隱藏 iframe，接著透過 JSONP 輪詢
+ * Apps Script doGet 取回同一張 ticket 的結果。
  */
 function api(action, fields = {}) {
   return new Promise((resolve, reject) => {
@@ -613,10 +570,15 @@ $("loginForm").addEventListener("submit", async event => {
     $("pin").value = "";
 
     show($("loginPanel"), false);
-    show($("scannerPanel"), true);
     show($("participantPanel"), false);
+    show($("scannerPanel"), true);
 
     message("登入成功，請啟動相機。", "ok");
+
+    $("scannerPanel").scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
 
   } catch (err) {
     message(err.message || String(err), "err");
@@ -678,7 +640,6 @@ function extractCode(text) {
     if (code) return code.trim();
   } catch (_) {}
 
-  // 允許直接掃描識別碼；網址格式則必須帶 code 參數。
   if (/^[A-Za-z0-9_-]{4,80}$/.test(raw)) return raw;
 
   throw new Error("無法從 QR Code 讀取有效的報到識別碼。");
@@ -754,7 +715,8 @@ function renderParticipant(p) {
 
     const valueEl = document.createElement("div");
     valueEl.className = "value";
-    valueEl.textContent = value == null || value === "" ? "—" : value;
+    valueEl.textContent =
+      value == null || value === "" ? "—" : value;
 
     row.append(labelEl, valueEl);
     info.appendChild(row);
@@ -850,14 +812,15 @@ $("nextButton").addEventListener("click", async () => {
   currentCode = "";
   currentParticipant = null;
   show($("participantPanel"), false);
-  message("準備掃描下一位……");
 
-  await startScanner();
+  message("準備掃描下一位……");
 
   $("scannerPanel").scrollIntoView({
     behavior: "smooth",
     block: "start"
   });
+
+  await startScanner();
 });
 
 $("startButton").addEventListener("click", startScanner);
@@ -884,6 +847,11 @@ async function expireSession(reason) {
     "\n請重新輸入工作人員 PIN。",
     "err"
   );
+
+  $("loginPanel").scrollIntoView({
+    behavior: "smooth",
+    block: "start"
+  });
 }
 
 $("logoutButton").addEventListener("click", async () => {
@@ -899,12 +867,14 @@ $("logoutButton").addEventListener("click", async () => {
   show($("participantPanel"), false);
 
   message("已登出。");
+
+  $("loginPanel").scrollIntoView({
+    behavior: "smooth",
+    block: "start"
+  });
 });
 
-/*
- * 不直接信任 localStorage 中的舊工作階段。
- * 先讓工作人員重新登入，以確認工作階段仍有效。
- */
+/* 每次開啟頁面都要求工作人員重新登入 */
 show($("loginPanel"), true);
 show($("scannerPanel"), false);
 show($("participantPanel"), false);
