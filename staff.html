@@ -26,6 +26,17 @@
       --red-bg: #FFF0EE;
     }
 
+
+    
+/* 已報到提示：大字、粗體、紅色 */
+
+.already-checked-in {
+    color: #D00000 !important;
+    font-size: 26px !important;
+    font-weight: 900 !important;
+    line-height: 1.5;
+}
+
     body {
       margin: 0;
       padding: 16px;
@@ -722,19 +733,30 @@ function renderParticipant(p) {
     info.appendChild(row);
   });
 
-  const already = p.status === "已報到";
 
-  $("participantStatus").textContent = already
+const already = p.status === "已報到";
+
+$("participantStatus").textContent = already
     ? "✓ 此參加者已經報到"
     : "尚未報到";
 
-  $("participantStatus").className =
+$("participantStatus").className =
     "status " + (already ? "warn" : "ok");
 
-  $("checkInButton").disabled = already;
-  $("checkInButton").textContent =
+$("participantStatus").classList.toggle(
+    "already-checked-in",
+    already
+);
+
+$("checkInButton").disabled = already;
+
+$("checkInButton").textContent =
     already ? "已報到，不可重複報到" : "確認報到";
-}
+
+$("checkInButton").classList.toggle(
+    "already-checked-in",
+    already
+);
 
 $("checkInButton").addEventListener("click", () => {
   if (!currentParticipant || !currentCode || busy) return;
