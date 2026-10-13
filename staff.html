@@ -348,9 +348,18 @@
 
   <section class="card" id="loginPanel">
     <h2>工作人員登入</h2>
-    <p class="muted">請輸入工作人員 PIN，登入後即可開始掃描報到。</p>
+    <p class="muted">請輸入登入者名稱及工作人員 PIN，登入後即可開始掃描報到。</p>
 
     <form id="loginForm">
+      <input
+        id="deviceName"
+        type="text"
+        maxlength="10"
+        autocomplete="off"
+        placeholder="請輸入登入者（最多 10 個字）"
+        aria-label="登入者"
+        required
+      >
       <input
         id="pin"
         type="password"
@@ -418,7 +427,7 @@ const WEB_APP_URL =
   "https://script.google.com/macros/s/AKfycbzAlcc6jm3rSgp0M0nqY4-trk8zr8-VaEGbnJY0sgf-H0gGb1OpjboIgH1hrKMiAGFK/exec";
 
 const SESSION_KEY = "eventStaffSession_test";
-const DEVICE_NAME = "GitHub Pages 工作人員手機";
+let currentDeviceName = "";
 
 const $ = id => document.getElementById(id);
 
@@ -826,7 +835,7 @@ $("confirmYes").addEventListener("click", async () => {
   try {
     const result = await api("staffCheckIn", {
       code: currentCode,
-      device: DEVICE_NAME,
+      device: currentDeviceName,
       session
     });
 
@@ -915,6 +924,7 @@ async function expireSession(reason) {
   await stopCamera();
 
   session = "";
+  currentDeviceName = "";
   localStorage.removeItem(SESSION_KEY);
 
   currentCode = "";
@@ -944,6 +954,7 @@ $("logoutButton").addEventListener("click", async () => {
   await stopCamera();
 
   session = "";
+  currentDeviceName = "";
   currentCode = "";
   currentParticipant = null;
 
@@ -971,6 +982,19 @@ $("loginForm").addEventListener("submit", async event => {
   if (busy) return;
 
   const pin = $("pin").value.trim();
+  const deviceName = $("deviceName").value.trim();
+
+  if (!deviceName) {
+    message("請輸入登入者名稱。", "err");
+    $("deviceName").focus();
+    return;
+  }
+
+  if (deviceName.length > 10) {
+    message("登入者名稱最多只能輸入 10 個字元。", "err");
+    $("deviceName").focus();
+    return;
+  }
 
   if (!pin) {
     message("請輸入工作人員 PIN。", "err");
@@ -990,6 +1014,7 @@ $("loginForm").addEventListener("submit", async event => {
     }
 
     session = result.session;
+    currentDeviceName = deviceName;
 
     localStorage.setItem(SESSION_KEY, session);
 
@@ -999,7 +1024,14 @@ $("loginForm").addEventListener("submit", async event => {
     show($("participantPanel"), false);
     show($("scannerPanel"), true);
 
-    message("登入成功，請啟動相機。", "ok");
+    message("登入成功（登入者：" + currentDeviceName + "），請啟動相機。", "ok");
+    $("loginStatus").innerHTML =
+      '<span class="login-badge">✓ 已登入：' +
+      currentDeviceName.replace(/[&<>"']/g, char => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;",
+        '"': "&quot;", "'": "&#39;"
+      })[char]) +
+      '</span>';
 
     $("scannerPanel").scrollIntoView({
       behavior: "smooth",
