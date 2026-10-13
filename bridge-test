@@ -1,0 +1,177 @@
+
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>測試版報到系統｜橋接測試</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 30px auto;
+      padding: 20px;
+      line-height: 1.7;
+    }
+    button {
+      padding: 12px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    #result {
+      margin-top: 20px;
+      padding: 14px;
+      background: #f2f2f2;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+  </style>
+</head>
+<body>
+  <h2>測試版報到系統</h2>
+  <h3>GitHub Pages ↔ Apps Script 橋接測試</h3>
+
+  <p>此頁只測試 ping，不會查詢或修改參加者報到資料。</p>
+  <button id="testButton" onclick="runTest()">開始測試</button>
+  <div id="result">等待測試……</div>
+
+  <iframe name="postFrame" id="postFrame"
+          style="display:none"></iframe>
+
+  <script>
+    const WEB_APP_URL =
+      "https://script.google.com/macros/s/AKfycbzAlcc6jm3rSgp0M0nqY4-trk8zr8-VaEGbnJY0sgf-H0gGb1OpjboIgH1hrKMiAGFK/exec";
+
+    let finished = false;
+    let timer = null;
+    let callbackName = "";
+
+    function show(message) {
+      document.getElementById("result").textContent = message;
+    }
+
+    function cleanup() {
+      if (timer) clearTimeout(timer);
+      if (callbackName) {
+        try { delete window[callbackName]; } catch (e) {}
+      }
+      document.getElementById("testButton").disabled = false;
+    }
+
+    function finish(message) {
+      if (finished) return;
+      finished = true;
+      cleanup();
+      show(message);
+    }
+
+    function pollResult(ticket, attempt) {
+      if (finished) return;
+
+      if (attempt > 20) {
+        finish(
+          "測試逾時：尚未取得 Apps Script 回覆。\n\n" +
+          "請先不要修改正式系統，將這個結果回報給我。"
+        );
+        return;
+      }
+
+      const script = document.createElement("script");
+      const callback = callbackName;
+
+      script.src =
+        WEB_APP_URL +
+        "?callback=" + encodeURIComponent(callback) +
+        "&ticket=" + encodeURIComponent(ticket) +
+        "&_=" + Date.now();
+
+      script.onerror = function () {
+        script.remove();
+        timer = setTimeout(
+          () => pollResult(ticket, attempt + 1), 1000
+        );
+      };
+
+      window[callback] = function (data) {
+        script.remove();
+
+        if (data && data.success && data.message) {
+          finish(
+            "✅ 橋接測試成功！\n\n" +
+            data.message +
+            "\n\n後端時間：" + (data.time || "未提供")
+          );
+          return;
+        }
+
+        if (data && data.pending) {
+          timer = setTimeout(
+            () => pollResult(ticket, attempt + 1), 1000
+          );
+          return;
+        }
+
+        finish(
+          "收到回覆，但格式或內容不符合預期：\n" +
+          JSON.stringify(data, null, 2)
+        );
+      };
+
+      document.head.appendChild(script);
+    }
+
+    function runTest() {
+      if (timer) clearTimeout(timer);
+      finished = false;
+
+      const button = document.getElementById("testButton");
+      button.disabled = true;
+      show("正在傳送測試資料……");
+
+      const bytes = new Uint8Array(24);
+      crypto.getRandomValues(bytes);
+
+      const ticket = Array.from(bytes)
+        .map(b => b.toString(16).padStart(2, "0"))
+        .join("");
+
+      callbackName =
+        "bridgeCallback_" + ticket.slice(0, 24);
+
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = WEB_APP_URL;
+      form.target = "postFrame";
+      form.style.display = "none";
+
+      const fields = {
+        action: "ping",
+        ticket: ticket
+      };
+
+      Object.entries(fields).forEach(([name, value]) => {
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.name = name;
+        input.value = value;
+        form.appendChild(input);
+      });
+
+      document.body.appendChild(form);
+
+      try {
+        form.submit();
+        show("POST 已送出，正在等待後端處理……");
+        pollResult(ticket, 1);
+      } catch (error) {
+        finish(
+          "無法送出 POST：\n" +
+          (error.message || String(error))
+        );
+      } finally {
+        setTimeout(() => form.remove(), 1000);
+      }
+    }
+  </script>
+</body>
+</html>
